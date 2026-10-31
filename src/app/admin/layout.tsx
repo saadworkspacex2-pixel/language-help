@@ -11,6 +11,7 @@ const LINKS = [
   { href: '/admin/payments', label: 'Payments', icon: 'wallet' },
   { href: '/admin/books', label: 'Book Store', icon: 'courses' },
   { href: '/admin/messages', label: 'Messages', icon: 'notices' },
+  { href: '/admin/emails', label: 'Automated Emails', icon: 'mail' },
   { href: '/admin/content', label: 'Homepage & Logo', icon: 'design' },
   { href: '/admin/site', label: 'People & Gallery', icon: 'site' },
 ];

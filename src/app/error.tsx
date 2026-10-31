@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function GlobalErrorPage({
   error,
@@ -73,7 +74,7 @@ export default function GlobalErrorPage({
           >
             Reload
           </button>
-          <a
+          <Link
             href="/"
             style={{
               border: '1px solid #E3E5EA',
@@ -87,7 +88,7 @@ export default function GlobalErrorPage({
             }}
           >
             Back to home
-          </a>
+          </Link>
         </div>
         {error.digest ? (
           <p style={{ margin: '18px 0 0', fontSize: 12, color: '#6B7280' }}>

@@ -91,6 +91,69 @@ SMTP_FROM="Language Help BD <you@gmail.com>"
 
 ---
 
+## Automated emails (Admin → Automated Emails)
+
+Everything the site sends by email is editable from the admin panel — no code changes,
+no redeploy.
+
+* **Where:** Admin sidebar → **Automated Emails** (`/admin/emails`, management only).
+* **Design tab** — rich text: **bold**, *italic*, underline, text size (12–32 px),
+  headings, lists, links, alignment and clear-formatting. Select text, then style it.
+* **HTML tab** — write the markup directly. Body-only HTML is wrapped in the branded
+  shell (logo, white card, footer); a complete document (`<!doctype …`) is sent exactly
+  as written.
+* **Preview tab** — the real rendering, with sample data, in an inbox-style frame.
+* **Subject line** — supports the same `{{variables}}`.
+* **Variables** — `{{name}}`, `{{code}}`, `{{course}}`, `{{amount}}`, `{{outstanding}}`,
+  `{{book}}`, `{{variant}}`, `{{batch}}`, `{{start}}`, `{{due}}`, `{{link}}`, `{{site}}`.
+  Click a chip to insert one at the cursor.
+* **Send test** — emails the current editor contents (unsaved edits included) to any
+  address, prefixed `[TEST]`. Requires SMTP to be configured.
+* **Restore default** — drops the customised version and returns to the shipped design.
+* **On/off** — switch a template off to stop that notification. Sign-in codes (OTP) are
+  always on, since they are required to log in.
+
+### Which emails exist
+
+| Key | Sent when |
+|---|---|
+| `otp_login` | Someone requests an email sign-in code |
+| `enrollment_received` | A student submits an enrollment request |
+| `enrollment_verified` | Management verifies an enrollment |
+| `enrollment_confirmed` | A seat is confirmed |
+| `payment_received` | A payment is recorded |
+| `certificate_ready` | A student completes a course |
+| `book_order` | A book order is placed |
+| `contact_reply` | Someone uses the website contact form |
+
+Emails are best-effort: if SMTP is missing or the template is switched off, the action
+that triggered the email (form submit, order) still succeeds — the failure is logged,
+never shown to the visitor. The exceptions are sign-in codes, which report the error.
+
+### Storage
+
+Customisations live in the `email_templates` table (`key`, `subject`, `body_html`,
+`enabled`, `updated_at`). Create it once with:
+
+```bash
+psql "$DATABASE_URL" -f db/email-templates.sql
+# or paste db/email-templates.sql into the Neon/Supabase SQL editor
+```
+
+Anything not customised falls back to the defaults in `src/lib/email-templates.ts`, so
+the app works before the table exists. `/api/health` reports the missing table.
+
+### Code map
+
+| File | Role |
+|---|---|
+| `src/lib/email-templates.ts` | Default templates, variable substitution, brand shell, HTML→text |
+| `src/lib/email-store.ts` | DB overrides merged over defaults, `renderEmail()` |
+| `src/lib/email-send.ts` | Never-throwing sender used by forms/orders |
+| `src/lib/actions/emails.ts` | `saveEmailTemplate`, `resetEmailTemplate`, `sendTestEmail` |
+| `src/components/admin/email-editor.tsx` | The editor UI (design / HTML / preview) |
+| `src/app/admin/emails/page.tsx` | The admin page |
+
 ## Google sign-in & OTP data model
 
 | Table / column | Purpose |

@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, PlusCircle, CreditCard, User, ClipboardList,
   Users, CalendarCheck, Settings, Image as ImageIcon, Megaphone, LogOut,
-  School, Menu, X, Wallet, Layers, UserRound, Palette,
+  School, Menu, X, Wallet, Layers, UserRound, Palette, Mail,
 } from 'lucide-react';
 import { logoutAction } from '@/lib/actions/auth';
 
@@ -15,7 +15,7 @@ const ICONS: Record<string, React.ElementType> = {
   dashboard: LayoutDashboard, courses: BookOpen, enroll: PlusCircle, payments: CreditCard,
   profile: User, homework: ClipboardList, students: Users, attendance: CalendarCheck,
   settings: Settings, gallery: ImageIcon, notices: Megaphone, wallet: Wallet,
-  batches: Layers, people: UserRound, site: School, design: Palette,
+  batches: Layers, people: UserRound, site: School, design: Palette, mail: Mail,
 };
 
 type LinkItem = { href: string; label: string; icon: string };

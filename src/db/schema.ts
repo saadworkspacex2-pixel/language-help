@@ -285,6 +285,18 @@ export const authSessions = pgTable('auth_sessions', {
   expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
 });
 
+// ---------- Editable automated email templates ----------
+export const emailTemplates = pgTable('email_templates', {
+  id: serial('id').primaryKey(),
+  key: text('key').notNull().unique(), // otp_login, enrollment_received, …
+  subject: text('subject').notNull().default(''),
+  bodyHtml: text('body_html').notNull().default(''),
+  enabled: boolean('enabled').notNull().default(true),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+});
+
+export type EmailTemplateRow = typeof emailTemplates.$inferSelect;
+
 export type User = typeof users.$inferSelect;
 export type Course = typeof courses.$inferSelect;
 export type Batch = typeof batches.$inferSelect;

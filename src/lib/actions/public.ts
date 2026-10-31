@@ -4,6 +4,9 @@ import { db } from '@/db';
 import { enrollmentRequests, contactMessages, branches, settings } from '@/db/schema';
 import { saveUpload } from '@/lib/upload';
 import { revalidatePath } from 'next/cache';
+import { sendTemplateEmail } from '@/lib/email-send';
+import { eq } from 'drizzle-orm';
+import { courses } from '@/db/schema';
 
 export async function submitEnrollmentRequest(formData: FormData) {
   try {
@@ -29,6 +32,15 @@ export async function submitEnrollmentRequest(formData: FormData) {
       includeBook: String(formData.get('includeBook') || '1') === '1',
       bookVariantId: formData.get('bookVariantId') ? Number(formData.get('bookVariantId')) : null,
     });
+
+    // Confirmation email — template editable in Admin → Automated Emails.
+    const course = (await db.select().from(courses).where(eq(courses.id, courseId)).limit(1))[0];
+    await sendTemplateEmail('enrollment_received', String(formData.get('email') || ''), {
+      name: fullName,
+      course: course?.title ?? 'your course',
+      link: '/portal',
+    });
+
     revalidatePath('/admin/enrollments');
     return { ok: true };
   } catch {
@@ -41,12 +53,17 @@ export async function submitContact(formData: FormData) {
     const name = String(formData.get('name') || '').trim();
     const message = String(formData.get('message') || '').trim();
     if (!name || !message) return { ok: false, error: 'Please add your name and message.' };
+    const email = String(formData.get('email') || '').trim();
     await db.insert(contactMessages).values({
       name,
-      email: String(formData.get('email') || ''),
+      email,
       phone: String(formData.get('phone') || ''),
       message,
     });
+
+    // Auto-reply so the sender knows the message arrived.
+    await sendTemplateEmail('contact_reply', email, { name });
+
     return { ok: true };
   } catch {
     return { ok: false, error: 'Something went wrong. Please try again.' };

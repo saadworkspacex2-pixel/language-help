@@ -358,3 +358,23 @@ body {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   html { scroll-behavior: auto; }
 }
+
+/* ---------------------------------------------------------------------------
+   Admin → Automated emails: the rich-text canvas. Styles mirror what the
+   email shell renders so the editor looks like the inbox (email-safe inline
+   styles are produced by the toolbar, this only styles the editing surface).
+--------------------------------------------------------------------------- */
+.email-canvas h1 { font-size: 21px; line-height: 1.3; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 8px; }
+.email-canvas h2 { font-size: 18px; line-height: 1.35; font-weight: 780; margin: 18px 0 8px; }
+.email-canvas h3 { font-size: 15.5px; line-height: 1.4; font-weight: 750; margin: 16px 0 6px; }
+.email-canvas p { margin: 0 0 14px; }
+.email-canvas p:last-child { margin-bottom: 0; }
+.email-canvas ul, .email-canvas ol { margin: 0 0 14px; padding-left: 20px; list-style: revert; }
+.email-canvas li { margin: 0 0 6px; }
+.email-canvas a { color: #B3141C; text-decoration: underline; }
+.email-canvas strong, .email-canvas b { font-weight: 750; }
+.email-canvas:empty::before {
+  content: 'Write the email body…';
+  color: #ADB5BD;
+  font-size: 13.5px;
+}

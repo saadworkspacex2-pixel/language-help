@@ -7,6 +7,7 @@ import { requireRole, getSessionUser } from '@/lib/session';
 import { saveUpload } from '@/lib/upload';
 import { slugify } from '@/lib/utils';
 import { notify, TEMPLATES } from '@/lib/notify';
+import { sendTemplateEmail } from '@/lib/email-send';
 import { revalidatePath } from 'next/cache';
 
 const refresh = () => revalidatePath('/', 'layout');
@@ -111,11 +112,20 @@ export async function placeBookOrder(prev: unknown, formData: FormData) {
   const unit = variant.offerPrice ?? variant.price;
   const amount = unit * quantity;
 
+  const orderEmail = String(formData.get('email') || '').trim();
   await db.insert(bookOrders).values({
     bookId, variantId, userId: user?.id ?? null, fullName, phone,
-    email: String(formData.get('email') || ''),
+    email: orderEmail,
     address: String(formData.get('address') || ''),
     quantity, amount,
+  });
+
+  // Confirmation email — template editable in Admin → Automated Emails.
+  await sendTemplateEmail('book_order', orderEmail, {
+    name: fullName,
+    book: book.title,
+    variant: variant.name,
+    amount: '৳' + amount.toLocaleString('en-IN'),
   });
 
   if (user) {

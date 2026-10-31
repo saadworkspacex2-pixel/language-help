@@ -76,13 +76,22 @@ function otpTemplate(code: string, name?: string) {
 }
 
 export async function sendOtpEmail(to: string, code: string, name?: string) {
-  const info = await getTransport().sendMail({
-    from: FROM(),
-    to,
-    subject: `${code} is your Language Help BD sign-in code`,
-    text: `Your Language Help BD sign-in code is ${code}. It expires in 10 minutes.`,
-    html: otpTemplate(code, name),
-  });
+  // The template is editable in Admin → Automated Emails (falls back to the
+  // built-in design if the DB/table is unavailable).
+  let subject = `${code} is your Language Help BD sign-in code`;
+  let html = otpTemplate(code, name);
+  let text = `Your Language Help BD sign-in code is ${code}. It expires in 10 minutes.`;
+  try {
+    const { renderEmail } = await import('@/lib/email-store');
+    const rendered = await renderEmail('otp_login', { code, name: name ?? 'there' });
+    subject = rendered.subject;
+    html = rendered.html;
+    text = rendered.text || text;
+  } catch {
+    // keep the built-in version
+  }
+
+  const info = await getTransport().sendMail({ from: FROM(), to, subject, html, text });
   return { messageId: info.messageId };
 }
 
