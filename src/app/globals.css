@@ -1,0 +1,360 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   LHBD — SKEUOMORPHIC DESIGN SYSTEM
+   Solid white canvas, neutral chrome and moulded edges: real bevels, inset
+   wells, enamel buttons and stitched panels on a pure-white page.
+   ========================================================================== */
+
+:root {
+  --lhbd-red: #E51A24;
+  --lhbd-red-dk: #B3141C;
+  --lhbd-red-lt: #FF4B54;
+  --lhbd-charcoal: #1A1A1A;
+  --lhbd-dark: #212529;
+  --lhbd-gray: #F8F9FA;
+  --lhbd-muted: #6C757D;
+
+  /* Surfaces — pure white with neutral cool greys */
+  --canvas: #FFFFFF;
+  --canvas-deep: #F4F5F7;
+  --paper: #FFFFFF;
+  --paper-hi: #FFFFFF;
+  --paper-lo: #F1F2F5;
+  --paper-edge: #E3E5EA;
+  --ink: #16181C;
+  --muted: #6B7280;
+  --steel: #B7BDC7;
+  --steel-lt: #E8EBF0;
+  --leather: #212429;
+  --leather-hi: #2E3238;
+
+  /* Shadow recipes */
+  --emboss: inset 0 1px 0 rgba(255, 255, 255, 1), inset 0 -1px 0 rgba(15, 23, 42, 0.06);
+  --emboss-soft: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(15, 23, 42, 0.04);
+  --lift: 0 1px 1px rgba(15, 23, 42, 0.05), 0 4px 10px -4px rgba(15, 23, 42, 0.10), 0 14px 28px -16px rgba(15, 23, 42, 0.18);
+  --lift-lg: 0 2px 2px rgba(15, 23, 42, 0.05), 0 10px 22px -8px rgba(15, 23, 42, 0.12), 0 30px 54px -26px rgba(15, 23, 42, 0.26);
+  --well: inset 0 2px 5px rgba(15, 23, 42, 0.10), inset 0 -1px 0 rgba(255, 255, 255, 1);
+  --well-deep: inset 0 3px 8px rgba(15, 23, 42, 0.16), inset 0 -1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html { scroll-behavior: smooth; }
+
+/* Solid white page — no tint, no grain */
+body {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.011em;
+  color: var(--ink);
+  background-color: #FFFFFF;
+  background-image: none;
+}
+
+::selection { background: rgba(229, 26, 36, 0.16); color: #19191F; }
+
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: #F1F2F5; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #FFFFFF, #C7CCD4);
+  border-radius: 8px; border: 3px solid #F1F2F5;
+  box-shadow: inset 0 1px 0 #fff;
+}
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #FFFFFF, #B1B3B9); }
+
+.font-serif-accent { font-family: var(--font-instrument), Georgia, serif; }
+
+@layer components {
+  /* ============================================================================
+     PANELS & CARDS  (legacy .glass* names kept so every page inherits the skin)
+     ========================================================================== */
+
+  .glass,
+  .glass-strong,
+  .glass-soft,
+  .glass-dark { border-radius: inherit; }
+
+  .glass {
+    background-color: rgba(243, 245, 245, 0.88);
+    background-image: linear-gradient(178deg, rgba(255,255,255,0.97), rgba(250,251,253,0.94) 58%, rgba(241,243,246,0.95));
+    border: 1px solid var(--paper-edge);
+    box-shadow: var(--emboss), var(--lift);
+    backdrop-filter: blur(14px) saturate(112%);
+    -webkit-backdrop-filter: blur(14px) saturate(112%);
+  }
+
+  .glass-strong {
+    background-color: rgba(255, 255, 255, 0.94);
+    background-image: linear-gradient(178deg, #FFFFFF, #FDFEFE 58%, #F1F3F6);
+    border: 1px solid #C6C8CE;
+    box-shadow: var(--emboss), var(--lift-lg);
+    backdrop-filter: blur(20px) saturate(115%);
+    -webkit-backdrop-filter: blur(20px) saturate(115%);
+  }
+
+  .glass-soft {
+    background-color: rgba(240, 242, 242, 0.72);
+    background-image: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(247,249,251,0.8));
+    border: 1px solid rgba(190, 192, 198, 0.75);
+    box-shadow: var(--emboss-soft), 0 2px 4px rgba(52, 52, 58, 0.08), 0 10px 20px -14px rgba(52, 52, 58, 0.35);
+  }
+
+  /* dark leather variant */
+  .glass-dark {
+    background-color: #24242A;
+    background-image: linear-gradient(178deg, #37373D, #24242A 60%, #1A1A20);
+    border: 1px solid #404046;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+    color: #E9EBF1;
+  }
+
+  /* Skeuomorphic primitives */
+  .skeuo-panel {
+    position: relative;
+    border-radius: 26px;
+    background-image: linear-gradient(178deg, #FFFFFF, #FCFDFE 58%, #F2F4F7);
+    border: 1px solid #C5C7CD;
+    box-shadow: var(--emboss), var(--lift);
+  }
+
+  .skeuo-well {
+    background-image: linear-gradient(180deg, #ECEFF3, #F5F7F8);
+    border: 1px solid #BEC0C6;
+    box-shadow: var(--well);
+    border-radius: 16px;
+  }
+
+  .stitch { outline: 1px dashed rgba(120, 120, 126, 0.45); outline-offset: -9px; }
+  .stitch-light { outline: 1px dashed rgba(255, 255, 255, 0.35); outline-offset: -9px; }
+
+  /* Mounted-photo frame */
+  .frame {
+    border-radius: 20px;
+    padding: 10px;
+    background-image: linear-gradient(180deg, #FFFFFF, #FAFBFD 70%, #E9EDF2);
+    border: 1px solid #BEC0C6;
+    box-shadow: var(--emboss), var(--lift);
+  }
+  .frame img,
+  .frame iframe { border-radius: 13px; box-shadow: inset 0 0 0 1px rgba(74, 74, 80, 0.18), 0 1px 2px rgba(48, 48, 54, 0.18); }
+
+  .brass { background-image: linear-gradient(180deg, #FFFFFF, #E4E9EF 46%, #BFC7D1 64%, #98A1AD); }
+
+  /* ============================================================================
+     BUTTONS — enamel, leather and bone
+     ========================================================================== */
+
+  .btn {
+    position: relative;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    font-weight: 600; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    border: 1px solid transparent;
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      background-position 0.4s ease, color 0.2s ease, border-color 0.2s ease;
+    will-change: transform;
+  }
+
+  /* red enamel */
+  .btn-primary {
+    color: #fff;
+    background-image: linear-gradient(180deg, #FF525A 0%, #E51A24 46%, #C0121B 100%);
+    border-color: #A50F17;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      inset 0 -2px 0 rgba(23, 23, 29, 0.45),
+      0 2px 3px rgba(34, 34, 40, 0.28),
+      0 10px 20px -8px rgba(170, 16, 26, 0.6);
+    text-shadow: 0 1px 0 rgba(29, 29, 35, 0.35);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    background-image: linear-gradient(180deg, #FF6169 0%, #EE1D28 46%, #C8151F 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.58),
+      inset 0 -2px 0 rgba(23, 23, 29, 0.45),
+      0 3px 4px rgba(34, 34, 40, 0.3),
+      0 16px 30px -10px rgba(170, 16, 26, 0.66);
+  }
+
+  /* dark leather */
+  .btn-dark {
+    color: #EDEFEF;
+    background-image: linear-gradient(180deg, #404046 0%, #26262C 48%, #17171D 100%);
+    border-color: #121218;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.6),
+      0 2px 3px rgba(16, 16, 22, 0.3),
+      0 12px 22px -10px rgba(16, 16, 22, 0.6);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  }
+  .btn-dark:hover {
+    transform: translateY(-2px);
+    background-image: linear-gradient(180deg, #4C4C52 0%, #2C2C32 48%, #1B1B21 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.6),
+      0 3px 4px rgba(16, 16, 22, 0.32),
+      0 18px 32px -12px rgba(16, 16, 22, 0.65);
+  }
+
+  /* bone / embossed outline */
+  .btn-outline {
+    color: #333339;
+    background-image: linear-gradient(180deg, #FFFFFF, #F5F7FA 60%, #D8DAE0);
+    border-color: #BBBDC3;
+    box-shadow: var(--emboss), 0 1px 2px rgba(52, 52, 58, 0.14), 0 8px 16px -10px rgba(52, 52, 58, 0.45);
+  }
+  .btn-outline:hover {
+    transform: translateY(-2px);
+    color: var(--lhbd-red-dk);
+    border-color: #A8AAB0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 2px 3px rgba(52, 52, 58, 0.16), 0 14px 26px -12px rgba(52, 52, 58, 0.5);
+  }
+
+  /* pressed states — the physical key travel */
+  .btn:active {
+    transform: translateY(1px) scale(0.995);
+    box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.35), inset 0 -1px 0 rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .btn-lg { padding: 0.95rem 1.9rem; font-size: 0.95rem; }
+  .btn-md { padding: 0.68rem 1.35rem; font-size: 0.875rem; }
+  .btn-sm { padding: 0.45rem 0.95rem; font-size: 0.8rem; }
+
+  /* ============================================================================
+     INPUTS — recessed wells with machined focus ring
+     ========================================================================== */
+
+  .input,
+  .select,
+  .textarea {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid #B8BAC0;
+    background-color: #F4F6F6;
+    background-image: linear-gradient(180deg, #F5F7FA, #F7F9F9 40%);
+    padding: 0.78rem 1rem;
+    font-size: 0.9rem;
+    color: #25252B;
+    outline: none;
+    box-shadow: var(--well);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .input::placeholder, .textarea::placeholder { color: #9B9DA3; }
+  .input:focus, .select:focus, .textarea:focus {
+    border-color: var(--lhbd-red);
+    box-shadow: var(--well), 0 0 0 3px rgba(229, 26, 36, 0.16);
+  }
+  .input:hover:not(:focus) { border-color: #A5A7AD; }
+
+  .label {
+    display: block; font-size: 0.78rem; font-weight: 650; color: #54545A;
+    margin-bottom: 0.4rem; letter-spacing: 0.03em; text-transform: uppercase;
+  }
+
+  select.input, select { appearance: none; }
+
+  /* ============================================================================
+     SMALL PARTS
+     ========================================================================== */
+
+  .card-hover {
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--emboss), var(--lift-lg);
+  }
+
+  .text-gradient {
+    background: linear-gradient(120deg, #25252B 30%, #707076);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .text-red { color: var(--lhbd-red); }
+
+  .eyebrow {
+    font-size: 11.5px; font-weight: 750; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--lhbd-red-dk);
+  }
+
+  /* engraved label — looks stamped into the paper */
+  .engraved {
+    color: #47474D;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+  }
+
+  /* machined divider */
+  .divider-rule {
+    height: 2px; border-radius: 2px;
+    background-image: linear-gradient(180deg, rgba(132, 134, 140, 0.55), rgba(255, 255, 255, 0.85) 60%, rgba(132, 134, 140, 0.25));
+  }
+}
+
+/* ============================================================================
+   LEGACY SURFACE OVERRIDES
+   Unlayered rules outrank Tailwind utilities, so flat white cards used across
+   the dashboards are re-skinned to paper without touching every component.
+   ========================================================================== */
+
+.bg-white { background-color: var(--paper-hi); }
+.bg-\[\#F8F9FA\] { background-color: rgba(239, 241, 241, 0.55); }
+.bg-\[\#F1F3F5\] { background-color: rgba(223, 225, 231, 0.9); }
+.bg-\[\#F8F9FA\]\/80 { background-color: rgba(239, 241, 241, 0.8); }
+
+/* ============================================================================
+   MOTION
+   ========================================================================== */
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.animate-marquee { animation: marquee 36s linear infinite; }
+@keyframes marquee-slow { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.animate-marquee-slow { animation: marquee-slow 60s linear infinite; }
+
+@keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+.animate-float { animation: float-y 7s ease-in-out infinite; }
+.animate-float-slow { animation: float-y 10s ease-in-out infinite; }
+
+@keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.82); } }
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes sheen { from { transform: translateX(-120%) rotate(8deg); } to { transform: translateX(220%) rotate(8deg); } }
+
+.hero-glow {
+  /* seamless parchment wash — single tile, no repeating edges */
+  background-image:
+    radial-gradient(1100px 560px at 84% -10%, rgba(229, 26, 36, 0.075), rgba(229, 26, 36, 0) 72%),
+    radial-gradient(880px 500px at -6% 4%, rgba(154, 156, 162, 0.09), rgba(154, 156, 162, 0) 72%),
+    radial-gradient(900px 520px at 50% 108%, rgba(100, 100, 106, 0.07), rgba(100, 100, 106, 0) 72%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%, 100% 100%, 100% 100%;
+}
+
+.dot-grid {
+  background-image: radial-gradient(rgba(94, 94, 100, 0.16) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 75%);
+}
+
+/* ============================================================================
+   ROUTE / DASHBOARD CHROME
+   ========================================================================== */
+
+/* tames the top of every dashboard page */
+.page-head { margin: 0; }
+.dash-top { padding-top: 1.25rem; }
+@media (min-width: 1024px) { .dash-top { padding-top: 1.5rem; } }
+
+/* ============================================================================
+   PRINT
+   ========================================================================== */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff !important; }
+  body::before { display: none !important; }
+  .print-full { box-shadow: none !important; border: 1px solid #ddd !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  html { scroll-behavior: auto; }
+}
