@@ -1,34 +1,26 @@
 import { NextResponse } from 'next/server';
-import { sql } from 'drizzle-orm';
+import { getTableColumns, getTableName, is, sql } from 'drizzle-orm';
+import { PgTable } from 'drizzle-orm/pg-core';
+import * as schema from '@/db/schema';
 import { db } from '@/db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
- * GET /api/health
- * Read-only deployment diagnostics. Never exposes secret values — only whether
- * each variable is present. Returns 200 when the database is reachable and the
- * schema is complete, 503 otherwise, with a `problems` list you can act on.
+ * GET /api/health — read-only deployment diagnostics.
+ *
+ * - Reports whether each env var is present (booleans only, never values).
+ * - Connects to Postgres and surfaces the *real* driver error (it walks the
+ *   `cause` chain that drizzle wraps around pg errors).
+ * - Compares every table and column used by `src/db/schema.ts` against what
+ *   actually exists in the database, so schema drift is impossible to miss.
+ *
+ * 200 = all good. 503 = something to fix, with `problems` + `hints`.
+ * The expected schema is derived from the drizzle definitions, so this file
+ * never needs updating when the schema grows.
  */
 
-const REQUIRED_TABLES = [
-  'users', 'otp_codes', 'courses', 'batches', 'schedules', 'enrollments',
-  'enrollment_requests', 'class_sessions', 'attendance', 'homework',
-  'homework_assignees', 'homework_submissions', 'payments', 'certificates',
-  'notices', 'gallery', 'branches', 'contact_messages', 'settings', 'messages',
-  'books', 'book_variants', 'book_orders', 'auth_sessions',
-];
-
-const REQUIRED_COLUMNS: Record<string, string[]> = {
-  users: ['google_id', 'is_founder', 'show_on_site', 'password_hash', 'student_id'],
-  courses: ['active'],
-  otp_codes: ['code_hash', 'expires_at', 'attempts', 'consumed_at'],
-};
-
-type Check = { ok: boolean; value?: unknown; error?: string };
-
-/** Drizzle wraps driver errors, so walk the `cause` chain to surface the real reason. */
 function errText(err: unknown): string {
   const parts: string[] = [];
   let current: unknown = err;
@@ -41,10 +33,17 @@ function errText(err: unknown): string {
   return parts.join(' -> ');
 }
 
-async function firstRow(query: ReturnType<typeof sql>): Promise<Record<string, unknown>> {
-  const res = (await db.execute(query)) as unknown as { rows?: Record<string, unknown>[] } | Record<string, unknown>[];
-  const rows = Array.isArray(res) ? res : (res.rows ?? []);
-  return rows[0] ?? {};
+/** Intended shape of the database, taken from the drizzle schema. */
+function expectedShape(): Record<string, string[]> {
+  const shape: Record<string, string[]> = {};
+  for (const value of Object.values(schema)) {
+    if (!is(value, PgTable)) continue;
+    const tableName = getTableName(value);
+    shape[tableName] = Object.values(getTableColumns(value as PgTable))
+      .map((column) => column.name)
+      .sort();
+  }
+  return shape;
 }
 
 export async function GET() {
@@ -59,88 +58,103 @@ export async function GET() {
     NODE_ENV: process.env.NODE_ENV ?? null,
   };
 
-  const problems: string[] = [];
-  const hints: string[] = [];
-
   if (!env.DATABASE_URL) {
     return NextResponse.json(
       {
         ok: false,
         env,
         problems: ['DATABASE_URL is not set in this environment.'],
-        hints: [
-          'Add DATABASE_URL to your host environment variables, then redeploy.',
-          'Every page that touches the database will show a generic server error without it.',
-        ],
+        hints: ['Add DATABASE_URL to your host environment variables, then redeploy.'],
       },
       { status: 503, headers: { 'Cache-Control': 'no-store' } },
     );
   }
 
-  // 1) Can we reach the database at all?
-  let connection: Check;
+  // 1) Reachability
+  let connection: Record<string, unknown>;
   try {
-    const row = await firstRow(sql`select current_database() as db, current_user as usr, version() as ver`);
+    const result = (await db.execute(
+      sql`select current_database() as db, current_user as usr, version() as ver`,
+    )) as unknown as { rows?: Record<string, unknown>[] } | Record<string, unknown>[];
+    const row = (Array.isArray(result) ? result : (result.rows ?? []))[0] ?? {};
     connection = {
       ok: true,
-      value: {
-        database: row.db,
-        user: row.usr,
-        server: String(row.ver ?? '').split(' ').slice(0, 2).join(' '),
-      },
+      database: row.db,
+      user: row.usr,
+      server: String(row.ver ?? '').split(' ').slice(0, 2).join(' '),
     };
   } catch (err) {
     const message = errText(err);
-    connection = { ok: false, error: message };
-    problems.push(`Cannot reach the database: ${message}`);
-    hints.push(
-      'Check the host/port/credentials in DATABASE_URL, and add ?sslmode=require for hosted Postgres (Neon, Supabase, Railway).',
-      'If the database uses connection pooling, use the pooled connection string.',
-    );
     return NextResponse.json(
-      { ok: false, env, connection, problems, hints, latencyMs: Date.now() - started },
+      {
+        ok: false,
+        env,
+        connection: { ok: false, error: message },
+        problems: [`Cannot reach the database: ${message}`],
+        hints: [
+          'Check host/port/user/password in DATABASE_URL.',
+          'Hosted Postgres (Neon, Supabase, Railway) usually needs ?sslmode=require.',
+          'If the provider gives several strings, use the direct (non-pooled) one for migrations.',
+        ],
+        latencyMs: Date.now() - started,
+      },
       { status: 503, headers: { 'Cache-Control': 'no-store' } },
     );
   }
 
-  // 2) Do the tables the app queries exist?
-  const tables: Record<string, boolean | string> = {};
-  for (const table of REQUIRED_TABLES) {
-    try {
-      const row = await firstRow(sql`select to_regclass(${'public.' + table}) is not null as present`);
-      const present = row.present === true;
-      tables[table] = present;
-      if (!present) problems.push(`Missing table: ${table}`);
-    } catch (err) {
-      tables[table] = `error: ${errText(err)}`;
+  // 2) Schema drift: one query, then diff against the drizzle schema
+  const expected = expectedShape();
+  const present = new Map<string, Set<string>>();
+  try {
+    const result = (await db.execute(
+      sql`select table_name, column_name from information_schema.columns where table_schema = 'public'`,
+    )) as unknown as { rows?: Record<string, unknown>[] } | Record<string, unknown>[];
+    const rows = Array.isArray(result) ? result : (result.rows ?? []);
+    for (const row of rows) {
+      const table = String(row.table_name);
+      if (!present.has(table)) present.set(table, new Set());
+      present.get(table)!.add(String(row.column_name));
+    }
+  } catch (err) {
+    return NextResponse.json(
+      {
+        ok: false,
+        env,
+        connection,
+        problems: [`Could not read information_schema: ${errText(err)}`],
+        hints: ['The database user may lack privileges on the public schema.'],
+        latencyMs: Date.now() - started,
+      },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
+  const problems: string[] = [];
+  const missingTables: string[] = [];
+  const missingColumns: Record<string, string[]> = {};
+
+  for (const [table, columns] of Object.entries(expected)) {
+    const actual = present.get(table);
+    if (!actual) {
+      missingTables.push(table);
+      problems.push(`Missing table: ${table}`);
+      continue;
+    }
+    const absent = columns.filter((column) => !actual.has(column));
+    if (absent.length > 0) {
+      missingColumns[table] = absent;
+      problems.push(`Missing column${absent.length > 1 ? 's' : ''}: ${absent.map((c) => `${table}.${c}`).join(', ')}`);
     }
   }
 
-  // 3) Do the newer columns exist (schema drift from an old push)?
-  const columns: Record<string, Record<string, boolean>> = {};
-  for (const [table, cols] of Object.entries(REQUIRED_COLUMNS)) {
-    columns[table] = {};
-    for (const col of cols) {
-      try {
-        const row = await firstRow(sql`
-          select count(*)::int as n
-          from information_schema.columns
-          where table_schema = 'public' and table_name = ${table} and column_name = ${col}
-        `);
-        const present = Number(row.n ?? 0) > 0;
-        columns[table][col] = present;
-        if (!present) problems.push(`Missing column: ${table}.${col}`);
-      } catch (err) {
-        problems.push(`Could not inspect ${table}.${col}: ${errText(err)}`);
-      }
-    }
-  }
-
+  const hints: string[] = [];
   if (problems.length > 0) {
-    hints.push('Run the schema sync against this database: `npx drizzle-kit push` with the same DATABASE_URL.');
-    hints.push('Optional demo content afterwards: `npx tsx src/db/seed.ts`.');
+    hints.push('Sync the database with the app schema: run `npx drizzle-kit push` using this exact DATABASE_URL (answer yes to any prompt).');
+    hints.push('Optionally load demo content afterwards: `npx tsx src/db/seed.ts`.');
+    hints.push('Until this is fixed, any page that queries these tables will show a server error.');
   }
-  if (!env.SMTP) hints.push('SMTP_* is not configured — email OTP codes cannot be delivered (set OTP_DEV_MODE=1 on staging to show them on screen).');
+  if (!env.OTP_SECRET) hints.push('OTP_SECRET is not set — email-code sign-in cannot work. Use `openssl rand -hex 32`.');
+  if (!env.SMTP) hints.push('SMTP_* is not configured — email OTP codes cannot be delivered (OTP_DEV_MODE=1 shows them on screen, staging only).');
   if (!env.GOOGLE_OAUTH) hints.push('GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET not set — the "Continue with Google" button is hidden.');
   if (env.OTP_DEV_MODE) hints.push('OTP_DEV_MODE=1 — turn this off in production.');
 
@@ -149,8 +163,11 @@ export async function GET() {
       ok: problems.length === 0,
       env,
       connection,
-      tables,
-      columns,
+      schema: {
+        tablesExpected: Object.keys(expected).length,
+        tablesMissing: missingTables,
+        columnsMissing: missingColumns,
+      },
       problems,
       hints,
       latencyMs: Date.now() - started,
